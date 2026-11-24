@@ -6,7 +6,8 @@
 
 ![platform](https://img.shields.io/badge/platform-macOS%2027%2B-blue) ![chip](https://img.shields.io/badge/chip-Apple%20silicon-black) ![swift](https://img.shields.io/badge/swift-5-orange) ![license](https://img.shields.io/badge/license-MIT-lightgrey)
 
-> ⚠️ **目前是規劃階段，還沒有可以下載的版本。** 下面寫的是預計的功能和用法，實際做出來可能會調整。各版改了什麼見 [CHANGELOG](CHANGELOG.md)（之後加入）。
+> ⚠️ **目前是規劃階段，還沒有可以下載的版本。** 下面寫的是預計的功能和用法，實際做出來可能會調整。
+> 現在正在做「階段 0」：先測試 Mac 內建的文字辨識和 AI 讀韓文收據準不準（見[第 10 節](#10-開發藍圖)）。各版改了什麼見 [CHANGELOG](CHANGELOG.md)。
 > 這個工具的構想來自作者整理 2026 年 10 月釜山旅遊花費的經驗：約 35 張韓文收據，對照星展、台新、永豐三家信用卡對帳單，手動整理非常花時間。
 
 ---
@@ -198,11 +199,29 @@ A：可以到 GitHub 開 Issue 告訴我們是哪家銀行。請**不要**直接
 
 | 階段 | 內容 | 狀態 |
 |---|---|---|
-| 0. 可行性驗證 | 用 macOS 內建的文字辨識和 AI 讀韓文收據，測試正確率 | 規劃中 |
+| 0. 可行性驗證 | 用 macOS 內建的文字辨識和 AI 讀韓文收據，測試正確率 | **進行中**：測試工具已寫好，還沒在 Mac 上跑過 |
 | 1. 收據入帳 | 建立行程、匯入照片、辨識、翻譯、分類、手動修改 | 規劃中 |
 | 2. 對帳 | 讀取星展／台新／永豐對帳單、比對、紅字確認、匯出 Excel／CSV | 規劃中 |
 | 3. 分帳 | 標記付款人和分攤成員，產生結算表給旅伴 | 規劃中 |
 | 4. 擴充 | 其他銀行、其他幣別、常見店家清單、台灣電子發票 | 之後 |
+
+### 階段 0：收據辨識測試（給開發者）
+
+測試工具會用兩種方法讀收據，再和人工確認過的標準答案比對：
+
+- **方法 A**：文字辨識讀出收據上的字 → 固定規則讀日期、時間、金額、卡號前 6 碼、付款方式 → AI 只負責店名翻譯、品項、消費類別。
+- **方法 B**：照片直接交給 AI 讀全部欄位，只拿來和方法 A 比較。
+
+怎麼跑：
+
+1. 把收據照片放進專案資料夾的 `private/receipts/`，標準答案放在 `private/expected.json`（格式見 `docs/ARCHITECTURE.md`）。
+   `private/` 不會上傳到 GitHub。
+2. 雙擊 **`收據測試.command`**。會自動編譯、跑自我測試、讀每一張收據，最後打開報告 `private/results/report-latest.md`。
+   - 第一次可能會跳出「命令列開發者工具」的安裝視窗：按「安裝」，裝好後再雙擊一次。
+   - 如果 Mac 說無法打開：在檔案上按右鍵 →「打開」。
+3. 報告裡有每個欄位的正確率、每張收據對錯、AI 取的名稱，以及文字辨識讀到的原始內容。
+
+也可以用終端機：`bash scripts/build.sh && bash scripts/selftest.sh`，再執行 `build/receipt-probe`（可用的選項見 `Sources/Probe/main.swift` 開頭說明，例如 `--no-ai` 只測文字辨識和規則）。
 
 ---
 
@@ -210,15 +229,22 @@ A：可以到 GitHub 開 Issue 告訴我們是哪家銀行。請**不要**直接
 
 ```text
 trip-ledger/
-├── README.md     ← 你正在看的這份說明
-├── CLAUDE.md     ← 給 AI 助理的協作守則
-├── LICENSE       ← 授權條款
-├── .gitignore    ← 不上傳到 GitHub 的檔案（編譯結果、本機測試用的真實收據）
-└── scripts/
-    └── git-hooks/ ← 開發用：commit／push 前的自動檢查
+├── README.md            ← 你正在看的這份說明
+├── 收據測試.command      ← 階段 0：雙擊執行收據辨識測試
+├── Sources/Probe/       ← 階段 0 的測試工具（文字辨識、規則、AI、報告、自我測試）
+├── scripts/
+│   ├── build.sh         ← 編譯
+│   ├── selftest.sh      ← 自我測試（用假資料檢查規則）
+│   └── git-hooks/       ← 開發用：commit／push 前的自動檢查
+├── docs/
+│   └── ARCHITECTURE.md  ← 給想看懂程式的人：流程圖、規則怎麼判斷、用到哪些技術
+├── CHANGELOG.md         ← 每次更新改了什麼
+├── CLAUDE.md            ← 給 AI 助理的協作守則
+├── LICENSE              ← 授權條款
+└── .gitignore           ← 不上傳到 GitHub 的檔案（編譯結果、private/ 裡的真實收據與報告）
 ```
 
-程式寫好後，這裡會補上完整的檔案說明。
+執行後還會多出 `build/`（編譯結果、紀錄）和 `private/`（真實收據、測試報告），兩者都不會上傳到 GitHub。
 
 ---
 
