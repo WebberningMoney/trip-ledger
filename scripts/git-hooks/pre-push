@@ -15,8 +15,8 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   fi
   while read -r sha email sig; do
     [ -z "$sha" ] && continue
-    if [ -n "$owner_email" ] && [ "$email" != "$owner_email" ]; then
-      echo "✋ commit ${sha:0:7} 的作者是 $email，不是專案擁有者（$owner_email）。"
+    if [ -n "${owner_email}" ] && [ "${email}" != "${owner_email}" ]; then
+      echo "✋ commit ${sha:0:7} 的作者是 ${email}，不是專案擁有者（${owner_email}）。"
       status=1
     fi
     if [ "$sig" != "N" ]; then

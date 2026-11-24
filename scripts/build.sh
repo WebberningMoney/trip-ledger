@@ -9,15 +9,15 @@ set -u
 cd "$(dirname "$0")/.." || exit 1
 mkdir -p build
 LOG=build/build_log.txt
-: > "$LOG"
-say() { echo "$@" | tee -a "$LOG"; }
+: > "${LOG}"
+say() { echo "$@" | tee -a "${LOG}"; }
 
 say "== 編譯 receipt-probe（$(date '+%Y-%m-%d %H:%M')） =="
 
 if [ "$(uname)" != "Darwin" ]; then say "✋ 這個工具只能在 Mac 上編譯。"; exit 1; fi
 if [ "$(uname -m)" != "arm64" ]; then say "✋ 需要 Apple 晶片（M1 以後）的 Mac。"; exit 1; fi
 ver="$(sw_vers -productVersion)"
-if [ "${ver%%.*}" -lt 27 ]; then say "✋ 需要 macOS 27 以上，這台是 $ver。"; exit 1; fi
+if [ "${ver%%.*}" -lt 27 ]; then say "✋ 需要 macOS 27 以上，這台是 ${ver}。"; exit 1; fi
 
 if ! xcrun --find swiftc >/dev/null 2>&1; then
   say "找不到 Swift 編譯器，正在請 macOS 安裝「命令列開發者工具」。"
@@ -27,7 +27,7 @@ if ! xcrun --find swiftc >/dev/null 2>&1; then
 fi
 
 SDK="$(xcrun --show-sdk-path)"
-say "macOS $ver｜$(xcrun swiftc --version 2>&1 | head -1)"
+say "macOS ${ver}｜$(xcrun swiftc --version 2>&1 | head -1)"
 
 # 把 SDK 裡 Foundation Models 和「圖片」有關的寫法存下來，方法 B 編譯不過時用來修正。
 FM_IF="$(find "$SDK/System/Library/Frameworks/FoundationModels.framework" -name '*.swiftinterface' 2>/dev/null | grep -m1 arm64)"
@@ -43,7 +43,7 @@ FLAGS=(-O -swift-version 5 -sdk "$SDK" -target arm64-apple-macos27.0)
 
 say ""
 say "-- 試著連方法 B 一起編譯 --"
-if xcrun swiftc "${FLAGS[@]}" -D PROBE_IMAGE_INPUT "${SOURCES[@]}" -o build/receipt-probe >>"$LOG" 2>&1; then
+if xcrun swiftc "${FLAGS[@]}" -D PROBE_IMAGE_INPUT "${SOURCES[@]}" -o build/receipt-probe >>"${LOG}" 2>&1; then
   say "✅ 編譯完成（方法 A＋方法 B）"
   exit 0
 fi
@@ -51,7 +51,7 @@ fi
 say "⚠️ 方法 B 的寫法這台 Mac 編譯不過（錯誤訊息在上面），改成只編譯方法 A。"
 say ""
 say "-- 只編譯方法 A --"
-if xcrun swiftc "${FLAGS[@]}" "${SOURCES[@]}" -o build/receipt-probe >>"$LOG" 2>&1; then
+if xcrun swiftc "${FLAGS[@]}" "${SOURCES[@]}" -o build/receipt-probe >>"${LOG}" 2>&1; then
   say "✅ 編譯完成（只有方法 A）"
   exit 0
 fi

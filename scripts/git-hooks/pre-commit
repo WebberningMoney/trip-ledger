@@ -10,8 +10,8 @@
 owner_email="$(git config tripledger.owneremail)"
 author_email="$(git config user.email)"
 
-if [ -n "$owner_email" ] && [ "$author_email" != "$owner_email" ]; then
-  echo "✋ commit 作者（$author_email）不是專案擁有者（$owner_email）。"
+if [ -n "${owner_email}" ] && [ "${author_email}" != "${owner_email}" ]; then
+  echo "✋ commit 作者（${author_email}）不是專案擁有者（${owner_email}）。"
   echo "   請照 CLAUDE.md 第 1 節設定 git config user.name／user.email。"
   exit 1
 fi

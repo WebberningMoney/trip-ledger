@@ -14,5 +14,8 @@
 - 編譯腳本 `scripts/build.sh`：只需要命令列開發者工具；方法 B 編譯不過時，會自動改成只編譯方法 A。
 - 說明文件：README、`docs/ARCHITECTURE.md`、給 AI 助理的協作守則 `CLAUDE.md`。
 
+### 修正
+- 編譯腳本在 Mac 上一開始就停住（「ver?: unbound variable」）：變數後面緊接中文字時，bash 會把中文字的一部分當成變數名稱。已改成 `${ver}` 這種寫法。
+
 ### 尚未在 Mac 上驗證
 - 以上程式都是在雲端寫的，**還沒有在真的 Mac 上編譯和執行過**。
