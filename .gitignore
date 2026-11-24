@@ -1,0 +1,4 @@
+build/
+.DS_Store
+# 真實收據與對帳單只在本機測試，絕不上傳
+private/

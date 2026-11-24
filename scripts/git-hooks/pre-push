@@ -1,0 +1,30 @@
+#!/bin/bash
+# push 前的自動檢查：要推送的每一個 commit，作者都必須是專案擁有者，而且沒有簽章。
+# 啟用方式：在專案資料夾執行 git config core.hooksPath scripts/git-hooks
+
+owner_email="$(git config tripledger.owneremail)"
+zero="0000000000000000000000000000000000000000"
+status=0
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue   # 刪除分支，不用檢查
+  if [ "$remote_sha" = "$zero" ]; then
+    range="$local_sha"                      # 新分支：檢查全部
+  else
+    range="$remote_sha..$local_sha"
+  fi
+  while read -r sha email sig; do
+    [ -z "$sha" ] && continue
+    if [ -n "$owner_email" ] && [ "$email" != "$owner_email" ]; then
+      echo "✋ commit ${sha:0:7} 的作者是 $email，不是專案擁有者（$owner_email）。"
+      status=1
+    fi
+    if [ "$sig" != "N" ]; then
+      echo "✋ commit ${sha:0:7} 有簽章，GitHub 可能會顯示 Unverified。"
+      status=1
+    fi
+  done < <(git log --format='%H %ae %G?' "$range")
+done
+
+[ $status -ne 0 ] && echo "   請照 CLAUDE.md 第 1 節修正；需要改寫歷史時，先問專案擁有者。"
+exit $status

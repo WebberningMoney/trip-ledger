@@ -1,0 +1,35 @@
+#!/bin/bash
+# commit 前的自動檢查（給幫忙改程式的人和 AI 助理用）。
+# 啟用方式：在專案資料夾執行 git config core.hooksPath scripts/git-hooks
+#
+# 會擋下三種情況：
+#   1. commit 的作者不是專案擁有者（AI 助理只能寫在 Co-Authored-By）
+#   2. 開啟了自動簽章（雲端沙盒的金鑰會讓 GitHub 顯示 Unverified）
+#   3. 改了程式，卻沒有改任何文件（README、CLAUDE.md、CHANGELOG、docs/）
+
+owner_email="$(git config tripledger.owneremail)"
+author_email="$(git config user.email)"
+
+if [ -n "$owner_email" ] && [ "$author_email" != "$owner_email" ]; then
+  echo "✋ commit 作者（$author_email）不是專案擁有者（$owner_email）。"
+  echo "   請照 CLAUDE.md 第 1 節設定 git config user.name／user.email。"
+  exit 1
+fi
+
+if [ "$(git config --bool commit.gpgsign)" = "true" ]; then
+  echo "✋ 開啟了自動簽章（commit.gpgsign=true）。請執行：git config commit.gpgsign false"
+  exit 1
+fi
+
+changed="$(git diff --cached --name-only)"
+code_changed="$(echo "$changed" | grep -E '^(Sources/|scripts/).*\.(swift|sh|py|command)$|\.command$' || true)"
+docs_changed="$(echo "$changed" | grep -E '^(README\.md|CLAUDE\.md|CHANGELOG\.md|docs/)' || true)"
+
+if [ -n "$code_changed" ] && [ -z "$docs_changed" ]; then
+  echo "✋ 這次改了程式，但沒有改任何文件："
+  echo "$code_changed" | sed 's/^/   - /'
+  echo "   請照 CLAUDE.md 第 2 節檢查 README、docs/ARCHITECTURE.md、CHANGELOG.md 是否需要更新。"
+  exit 1
+fi
+
+exit 0
