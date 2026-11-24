@@ -29,6 +29,7 @@ struct ReceiptResult: Codable {
     var expected: Expected?
     var ocrRows: [String] = []
     var ocrSeconds: Double = 0
+    var ocrOrientation: String = "正"
     var ocrError: String? = nil
     var rules = Extracted()
     var aiText = AIRun()
@@ -128,7 +129,8 @@ enum Report {
         // 原始辨識文字（方便找出規則判斷錯的原因）
         md += ["", "## 文字辨識讀到的原始內容", ""]
         for r in results {
-            md += ["<details><summary>\(r.file)</summary>", "", "```"]
+            let turned = r.ocrOrientation == "正" ? "" : "（照片方向：\(r.ocrOrientation)）"
+            md += ["<details><summary>\(r.file)\(turned)</summary>", "", "```"]
             md += r.ocrError.map { ["辨識失敗：" + $0] } ?? r.ocrRows
             md += ["```", ""]
             if !r.aiText.raw.isEmpty { md += ["AI（方法 A）原始回覆：", "```", r.aiText.raw, "```", ""] }

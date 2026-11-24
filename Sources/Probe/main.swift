@@ -92,7 +92,9 @@ for (index, url) in images.enumerated() {
 
     let start = Date()
     do {
-        result.ocrRows = OCR.rows(try OCR.recognize(image))
+        let ocr = try OCR.recognizeBestOrientation(image)
+        result.ocrRows = ocr.rows
+        result.ocrOrientation = ocr.orientation
     } catch {
         result.ocrError = "\(error)"
     }
@@ -105,6 +107,7 @@ for (index, url) in images.enumerated() {
     }
 
     let r = result.rules
+    if result.ocrOrientation != "正" { print("（照片方向：\(result.ocrOrientation)）", terminator: "") }
     print(" A：\(r.date ?? "?") \(r.time ?? "?") \(r.amount.map { String($0) } ?? "?") \(r.cardPrefix ?? "-") \(r.pay ?? "-")"
           + (result.aiText.fields.map { "｜\($0.storeZh ?? "?")-\($0.itemsZh ?? "?")（\($0.category ?? "?")）" } ?? ""))
     results.append(result)

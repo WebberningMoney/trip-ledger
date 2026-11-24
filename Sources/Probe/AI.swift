@@ -4,8 +4,8 @@
 //         店名翻成中文、品項濃縮、判斷消費類別。金額日期不交給 AI（由 Rules.swift 負責）。
 // 方法 B：直接把照片交給 AI，請它讀出全部欄位（包含金額、日期）。
 //         這只是拿來和方法 A 比較準確度，不打算用在正式版的數字欄位。
-//         方法 B 用到 macOS 27 才有的「AI 直接看圖片」功能，寫法還沒在真的 Mac 上確認過，
-//         所以放在 PROBE_IMAGE_INPUT 開關裡：編譯不過時，build.sh 會自動改成只編譯方法 A。
+//         方法 B 用到 macOS 27 才有的「AI 直接看圖片」功能，放在 PROBE_IMAGE_INPUT 開關裡：
+//         編譯不過時，build.sh 會自動改成只編譯方法 A。
 //
 // 這裡不用 @Generable 這類 Swift 巨集（只有命令列開發者工具時可能編譯不過），
 // 而是請 AI 回傳 JSON 文字，再由程式解析；解析失敗就當成「需要人工確認」。
@@ -94,11 +94,12 @@ enum AI {
         var run = AIRun()
         do {
             let session = LanguageModelSession(instructions: imageInstructions)
-            // ⚠️ 這段寫法是依 macOS 27「AI 可以看圖片」的公告推測的，還沒在真的 Mac 上編譯過。
-            // 編譯不過時 build.sh 會改成不含方法 B，並把 SDK 裡相關的寫法存到 build/fm_image_api.txt 供修正。
+            // 寫法依 macOS 27 SDK 的介面檔（build/fm_image_api.txt）：圖片要包成 Attachment 才能放進提問。
+            // 編譯不過時 build.sh 會改成不含方法 B。
+            let photo = FoundationModels.Attachment<ImageAttachmentContent>(image)
             let response = try await session.respond {
                 "Read this receipt photo."
-                image
+                photo
             }
             run.raw = response.content
             run.fields = parse(response.content)

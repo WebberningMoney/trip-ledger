@@ -36,18 +36,44 @@ enum OCR {
     }
 
     /// 辨識一張照片裡的所有文字（韓文＋英文，用「精準」模式）。
-    static func recognize(_ image: CGImage) throws -> [OCRPiece] {
+    /// orientation：告訴 Vision 照片要怎麼轉才是正的（預設當成已經是正的）。
+    static func recognize(_ image: CGImage, orientation: CGImagePropertyOrientation = .up) throws -> [OCRPiece] {
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.recognitionLanguages = ["ko-KR", "en-US"]
         request.usesLanguageCorrection = true
-        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+        let handler = VNImageRequestHandler(cgImage: image, orientation: orientation, options: [:])
         try handler.perform([request])
         let observations = request.results ?? []
         return observations.compactMap { observation in
             guard let best = observation.topCandidates(1).first else { return nil }
             return OCRPiece(text: best.string, box: observation.boundingBox)
         }
+    }
+
+    /// 辨識並自動找出照片的方向：先當成正的讀；如果讀不到日期或金額，
+    /// 再試著當成倒過來、向左轉、向右轉各讀一次，取規則讀到最多欄位的那一次。
+    /// （實測有收據照片明明是正的，Vision 卻讀成倒過來的字。）
+    static func recognizeBestOrientation(_ image: CGImage) throws -> (rows: [String], orientation: String) {
+        func score(_ e: Extracted) -> Int {
+            [e.date != nil, e.time != nil, e.amount != nil, e.cardPrefix != nil].filter { $0 }.count
+        }
+        var bestRows = rows(try recognize(image, orientation: .up))
+        var bestName = "正"
+        var bestScore = score(Rules.extract(rows: bestRows))
+        let first = Rules.extract(rows: bestRows)
+        if first.date != nil && first.amount != nil { return (bestRows, bestName) }
+        let others: [(CGImagePropertyOrientation, String)] = [(.down, "倒過來"), (.right, "向右轉"), (.left, "向左轉")]
+        for (orientation, name) in others {
+            let candidate = rows(try recognize(image, orientation: orientation))
+            let s = score(Rules.extract(rows: candidate))
+            if s > bestScore {
+                bestRows = candidate
+                bestName = name
+                bestScore = s
+            }
+        }
+        return (bestRows, bestName)
     }
 
     /// 把文字片段依「由上到下、由左到右」排好，同一橫排的接成一行（中間用兩個空白隔開）。

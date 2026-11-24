@@ -4,13 +4,16 @@
 // 而是用正規表示式（一種描述「文字長什麼樣子」的寫法）直接比對。
 //
 // 判讀方式（白話）：
-// - 日期：找 2026-10-10、2026/10/13、2026.10.14、2026년 10월 11일、26/10/11 這些寫法；
+// - 日期：找 2026-10-10、2026/10/13、2026.10.14、2026년 10월 11일、26/10/11 這些寫法
+//   （也接受文字辨識常見的讀錯：「-」變成「~」、分隔符號不見、日期和時間黏在一起）；
 //   優先用「同一行後面就有時間」的那個（例如「거래일시 2026-10-10 18:14:59」），
 //   這樣可以避開「退換貨期限 2026-10-25」這類沒有時間的日期。
-// - 金額：先找有關鍵字的那一行（승인금액、결제금액、Payment amount、합계…），
-//   依關鍵字的優先順序取那一行最大的金額；含「부가세、할인、Refund、Tax」等字的行不算。
-//   都找不到時，改用整張收據最常出現的金額。
-// - 卡號前 6 碼：找「4 位數字＋2 位數字，後面接著 * 號」的寫法（例如 5483-68**、548368*****）。
+// - 金額：先找有關鍵字的那一行（승인금액、결제금액、Payment amount、합계…），取那一行最大的金額
+//   （那一行沒有數字時看下一行）；含「부가세、할인、Refund、Tax、匯率」等字的行不算。
+//   有好幾個候選時，優先選「收據上找得到對應稅金（總額÷11）」的，再依關鍵字的優先順序。
+//   都找不到時，改用整張收據最常出現的金額。「58, 000」這種逗號後面多一個空白的也接受。
+// - 卡號前 6 碼：找「4 位數字＋2 位數字，後面接著 * 號」的寫法（例如 5483-68**、548368*****）；
+//   * 被讀成 # ※ x 等符號也算。
 // - 付款方式：出現 LINE Pay／라인페이 就是 LINE Pay；出現 현금（現金）且沒有卡號就是現金；其他有卡號的算刷卡。
 
 import Foundation
@@ -41,7 +44,9 @@ enum Rules {
 
     /// (正規表示式, 年份是不是 4 位數)
     private static let datePatterns: [(String, Bool)] = [
-        (#"(20\d{2})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})(?!\d)"#, true),
+        // 4 位數年份。分隔符號可以省略或被讀成「~」（文字辨識常把「-」讀錯、或漏掉）；
+        // 日期後面可以直接黏著時間（例如「2026-10-1112:56:41」）。
+        (#"(?<!\d)(20\d{2})\s*[-./년~]?\s*(0?[1-9]|1[0-2])\s*[-./월~]?\s*(0?[1-9]|[12]\d|3[01])(?:\s*일)?(?=\D|\d{1,2}\s?:\s?\d{2}|$)"#, true),
         (#"(?<![\d-])(\d{2})[-/](\d{1,2})[-/](\d{1,2})(?![\d-])"#, false),
     ]
     private static let timePattern = #"(?<!\d)([01]?\d|2[0-3])\s?:\s?([0-5]\d)"#
@@ -88,20 +93,33 @@ enum Rules {
     private static let excludedWords = [
         "부가세", "vat", "taxtotal", "과세물품", "과세합", "과세금액", "공급가", "할인", "refund", "환급액", "즉시환급",
         "단가", "거스름", "면세합", "administrative", "제비용", "환급전",
+        "exchange", "today'", "jpy", "환율",   // 免稅店收據上的匯率
     ]
     private static let moneyPattern =
-        #"(?<![\d,.])(\d{1,3}(?:[,.]\d{3})+|\d+(?=\s*(?:원|won|\(won\))))"#
+        #"(?<![\d,.])(\d{1,3}(?:[,.]\s?\d{3})+|\d+(?=\s*(?:원|won|\(won\))))"#
 
     static func amount(_ rows: [String]) -> Int? {
-        var best: (rank: Int, value: Int)? = nil
-        for row in rows {
+        // 整張收據出現過的所有金額（含稅金那幾行），用來檢查「總額和稅金對不對得上」。
+        let allValues = rows.flatMap { moneyValues(in: $0) }
+
+        var candidates: [(rank: Int, value: Int)] = []
+        for (i, row) in rows.enumerated() {
             let key = normalized(row)
             if excludedWords.contains(where: { key.contains($0) }) { continue }
             guard let rank = amountKeywords.firstIndex(where: { key.contains($0) }) else { continue }
-            guard let value = moneyValues(in: row).max() else { continue }
-            if best == nil || rank < best!.rank { best = (rank, value) }
+            var values = moneyValues(in: row)
+            // 照片拍歪時，金額可能被分到下一行（例如「합계금액」下一行才是「61,000」）。
+            if values.isEmpty, i + 1 < rows.count, isNumberOnly(rows[i + 1]) {
+                values = moneyValues(in: rows[i + 1])
+            }
+            if let value = values.max() { candidates.append((rank, value)) }
         }
-        if let best = best { return best.value }
+        if !candidates.isEmpty {
+            // 韓國收據的稅金通常是總額的 1/11；對得上稅金的候選金額比較可信。
+            let supported = candidates.filter { vatConsistent($0.value, allValues) }
+            let pool = supported.isEmpty ? candidates : supported
+            return pool.min { ($0.rank, $0.value) < ($1.rank, $1.value) }?.value
+        }
         // 找不到關鍵字：用最常出現的金額（一樣多時取比較大的）。
         var counts: [Int: Int] = [:]
         for row in rows where !excludedWords.contains(where: { normalized(row).contains($0) }) {
@@ -110,15 +128,30 @@ enum Rules {
         return counts.max { ($0.value, $0.key) < ($1.value, $1.key) }?.key
     }
 
+    /// 收據上有沒有「稅金≈總額÷11」或「未稅金額≈總額−稅金」的數字（誤差 3 元以內）。
+    static func vatConsistent(_ total: Int, _ values: [Int]) -> Bool {
+        guard total >= 1000 else { return false }
+        let vat = Double(total) / 11.0
+        return values.contains { v in
+            v != total && (abs(Double(v) - vat) <= 3 || abs(Double(v) - (Double(total) - vat)) <= 3)
+        }
+    }
+
+    /// 這一行是不是只有數字（金額）。
+    static func isNumberOnly(_ row: String) -> Bool {
+        row.range(of: #"^[\s\d,.원₩W]+$"#, options: .regularExpression) != nil
+    }
+
     static func moneyValues(in row: String) -> [Int] {
         allMatches(moneyPattern, in: row, caseInsensitive: true).compactMap { match in
-            Int(match[1].replacingOccurrences(of: ",", with: "").replacingOccurrences(of: ".", with: ""))
+            Int(match[1].filter { $0.isNumber })
         }
     }
 
     // MARK: - 卡號與付款方式
 
-    private static let cardPattern = #"(?<!\d)(\d{4})[\s-]?(\d{2})(?:\d{2})?[\s-]?[*＊xX※]"#
+    /// 遮蔽符號常被文字辨識讀成 ＊ x ※ # • 等；「w」只有後面接著 * 才算（避免把「1577-4887 www」當成卡號）。
+    private static let cardPattern = #"(?<!\d)(\d{4})[\s-]?(\d{2})(?:\d{2})?[\s-]?(?:[*＊xX※#•·✱]|[wW]\*)"#
 
     static func cardPrefix(_ text: String) -> String? {
         guard let match = firstMatch(cardPattern, in: text) else { return nil }
