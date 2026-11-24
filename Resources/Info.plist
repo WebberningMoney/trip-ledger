@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>TripLedger</string>
+	<key>CFBundleIdentifier</key>
+	<string>io.github.webberningmoney.tripledger</string>
+	<key>CFBundleName</key>
+	<string>TripLedger</string>
+	<key>CFBundleDisplayName</key>
+	<string>TripLedger</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>zh_TW</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>27.0</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.finance</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>TripLedger 只會讀取你挑選的收據照片，複製一份到 App 自己的資料夾，不會修改或上傳。</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 Webber Huang. MIT License.</string>
+</dict>
+</plist>

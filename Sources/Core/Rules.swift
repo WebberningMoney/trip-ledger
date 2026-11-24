@@ -15,6 +15,7 @@
 // - 卡號前 6 碼：找「4 位數字＋2 位數字，後面接著 * 號」的寫法（例如 5483-68**、548368*****）；
 //   * 被讀成 # ※ x 等符號也算。
 // - 付款方式：出現 LINE Pay／라인페이 就是 LINE Pay；出現 현금（現金）且沒有卡號就是現金；其他有卡號的算刷卡。
+// - 營業登記號碼：「3 位數-2 位數-5 位數」（例如 217-17-25290），用來辨認同一家店。
 
 import Foundation
 
@@ -164,6 +165,16 @@ enum Rules {
         if key.contains("현금") && cardPrefix == nil { return "cash" }
         if cardPrefix != nil || key.contains("카드") || key.contains("card") { return "card" }
         return nil
+    }
+
+    // MARK: - 營業登記號碼
+
+    /// 韓國收據上的營業登記號碼（사업자번호，例如 217-17-25290），用來辨認「是不是同一家店」。
+    /// 讀不到時回傳 nil。
+    static func businessNumber(_ rows: [String]) -> String? {
+        let pattern = #"(?<![\d-])(\d{3})\s?-\s?(\d{2})\s?-\s?(\d{5})(?![\d-])"#
+        guard let match = firstMatch(pattern, in: rows.joined(separator: "\n")) else { return nil }
+        return "\(match[1])-\(match[2])-\(match[3])"
     }
 
     // MARK: - 小工具

@@ -1,10 +1,12 @@
 // AI.swift：用 Mac 內建的裝置端 AI（Apple Foundation Models）整理收據文字。
 //
 // 方法 A：先用文字辨識讀出收據上的字，再交給 AI 做「文字工作」——
-//         店名翻成中文、品項濃縮、判斷消費類別。金額日期不交給 AI（由 Rules.swift 負責）。
+//         找出收據上印的店名、品項濃縮、判斷消費類別。金額日期不交給 AI（由 Rules.swift 負責）。
+//         App 裡：AI 給的店名一定要真的出現在收據上才採用（見 Merchants.appearsOnReceipt），
+//         中文店名改用 Mac 內建的翻譯，類別由 Merchants.normalizeCategory 對應到八類。
 // 方法 B：直接把照片交給 AI，請它讀出全部欄位（包含金額、日期）。
-//         這只是拿來和方法 A 比較準確度，不打算用在正式版的數字欄位。
-//         方法 B 用到 macOS 27 才有的「AI 直接看圖片」功能，放在 PROBE_IMAGE_INPUT 開關裡：
+//         階段 0 實測數字常錯、還會編店名，所以 App 只在「規則讀不到」時，把它的答案當參考（第二意見）。
+//         方法 B 用到 macOS 27 才有的「AI 直接看圖片」功能，放在 AI_IMAGE_INPUT 開關裡：
 //         編譯不過時，build.sh 會自動改成只編譯方法 A。
 //
 // 這裡不用 @Generable 這類 Swift 巨集（只有命令列開發者工具時可能編譯不過），
@@ -15,7 +17,7 @@ import FoundationModels
 import CoreGraphics
 
 /// AI 回傳並解析後的欄位（全部都可能是 nil）。
-struct AIFields: Codable {
+struct AIFields: Codable, Equatable {
     var storeKo: String? = nil
     var storeZh: String? = nil
     var itemsZh: String? = nil
@@ -29,7 +31,7 @@ struct AIFields: Codable {
 }
 
 /// 一次 AI 呼叫的結果：解析好的欄位、AI 原始回覆、花了幾秒、錯誤訊息。
-struct AIRun: Codable {
+struct AIRun: Codable, Equatable {
     var fields: AIFields? = nil
     var raw: String = ""
     var seconds: Double = 0
@@ -89,7 +91,7 @@ enum AI {
 
     /// 方法 B：直接把照片交給 AI。
     static func readImage(_ image: CGImage) async -> AIRun {
-        #if PROBE_IMAGE_INPUT
+        #if AI_IMAGE_INPUT
         let start = Date()
         var run = AIRun()
         do {
@@ -115,7 +117,7 @@ enum AI {
     }
 
     static var imageInputCompiled: Bool {
-        #if PROBE_IMAGE_INPUT
+        #if AI_IMAGE_INPUT
         return true
         #else
         return false

@@ -83,7 +83,22 @@ enum SelfTest {
                 print("❌ \(c.name)：" + problems.joined(separator: "；"))
             }
         }
-        print(failed == 0 ? "規則自我測試：全部 \(cases.count) 題通過" : "規則自我測試：\(failed)／\(cases.count) 題沒通過")
+        // 營業登記號碼與類別對應
+        let extras: [(String, Bool)] = [
+            ("營業登記號碼", Rules.businessNumber(["000-00-00000 TEL: 051-000-0000"]) == "000-00-00000"),
+            ("電話號碼不是營業登記號碼", Rules.businessNumber(["TEL: 051-743-7771"]) == nil),
+            ("AI 回答「飲」算成「食」", Merchants.normalizeCategory("飲") == "食"),
+            ("AI 回答「藥」算成「他」", Merchants.normalizeCategory("藥") == "他"),
+            ("AI 回答八類以內的照用", Merchants.normalizeCategory("樂") == "樂"),
+            ("AI 編的店名不採用", !Merchants.appearsOnReceipt("雅緻酒店", rows: ["미피 해운대점", "합계 9,000"])),
+            ("收據上有的店名採用", Merchants.appearsOnReceipt("미피 해운대점", rows: ["미피  해운대점(에스에스엠)"])),
+        ]
+        for (name, ok) in extras {
+            print(ok ? "✅ \(name)" : "❌ \(name)")
+            if !ok { failed += 1 }
+        }
+        let total = cases.count + extras.count
+        print(failed == 0 ? "自我測試：全部 \(total) 題通過" : "自我測試：\(failed)／\(total) 題沒通過")
         return failed == 0
     }
 }
