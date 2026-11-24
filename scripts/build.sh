@@ -71,6 +71,8 @@ cp Resources/Info.plist "${APP}/Contents/Info.plist"
 cp Resources/chains.json "${APP}/Contents/Resources/chains.json"
 if [ -f Resources/AppIcon.icns ]; then cp Resources/AppIcon.icns "${APP}/Contents/Resources/AppIcon.icns"; fi
 # 免費的臨時簽章（ad-hoc）：讓 macOS 願意執行；不需要 Apple 開發者帳號。
+# 簽章前先清掉檔案上 macOS 附加的隱藏資訊（不然 codesign 會拒絕簽章）。
+xattr -cr "${APP}" 2>/dev/null
 codesign --force --sign - "${APP}" >>"${LOG}" 2>&1 || say "⚠️ 臨時簽章失敗（通常不影響在這台 Mac 上使用）"
 say ""
 say "✅ App 放在 ${APP}"

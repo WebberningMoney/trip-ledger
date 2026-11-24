@@ -113,7 +113,8 @@ flowchart LR
 - **記住的店家**：用營業登記號碼（`biz:217-17-25290`）和收據上的店名（`name:…`）兩種鑰匙記住同一家店；
   使用者改了中文店名或分類、或按「確認這筆」時寫入，並套用到同一個行程裡還沒確認的同一家店。
 - **紅字（待確認）**：`Receipt.problems` 列出原因——日期／時間／金額讀不到、店名或類別是空的、
-  或店名和類別是翻譯／AI 自動判斷的（還沒被記住或確認）。
+  或店名和類別是翻譯／AI 自動判斷的（還沒被記住或確認）、或品項是 AI 寫的（`itemsFromAI`）。
+  新加的欄位一律用「可以是空的」型別（例如 `Bool?`），舊版存的帳本才讀得回來。
 - **沒有 Xcode 也能編譯**：畫面狀態用 `ObservableObject`＋`@Published`，編輯中的內容放在 `Draft`、
   視窗開關放在 `UIState`，不用 `@State`、`@Observable` 這類需要 Xcode 外掛的巨集。資料用 `Codable` 存成 JSON。
 - **匯出 Excel**：Excel 檔其實是 zip 壓縮的幾個 XML 檔。`XLSXExport` 自己寫出那些 XML，再用 macOS 內建的 `/usr/bin/zip` 打包。

@@ -28,7 +28,7 @@ struct ContentView: View {
         }
         .toolbar {
             ToolbarItemGroup {
-                if model.isProcessing {
+                if model.isProcessing || !model.progressText.isEmpty {
                     ProgressView().controlSize(.small)
                     Text(model.progressText).font(.caption).foregroundStyle(.secondary)
                 }

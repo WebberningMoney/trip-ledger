@@ -50,6 +50,7 @@ enum ReceiptReader {
             r.storeKo = name
         }
         r.itemsZh = ai?.itemsZh
+        r.itemsFromAI = r.itemsZh == nil ? nil : true
         let aiCategory = Merchants.normalizeCategory(ai?.category)
 
         let keys = Merchants.memoryKeys(businessNumber: r.businessNumber, storeKo: r.storeKo)

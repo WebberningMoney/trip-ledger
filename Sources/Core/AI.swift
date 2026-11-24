@@ -57,7 +57,7 @@ enum AI {
     static let textInstructions = """
     You read the OCR text of one shop receipt from Korea and describe it for a Traditional Chinese (Taiwan) travel expense sheet.
     Reply with ONLY one JSON object and nothing else, using these keys:
-    {"storeKo": shop name as printed, "storeZh": short shop name in Traditional Chinese (keep famous brand names such as Starbucks as 星巴克, Olive Young as Olive Young), "itemsZh": the main items bought, in Traditional Chinese, under 12 characters, "category": one character}
+    {"storeKo": the shop or brand name copied exactly as printed on the receipt (the shop name with its branch, for example "미피 해운대점"; not the operating company in parentheses, not "(주)" or "주식회사"), "storeZh": short shop name in Traditional Chinese (keep famous brand names such as Starbucks as 星巴克, Olive Young as Olive Young), "itemsZh": the main items bought, in Traditional Chinese, under 12 characters, only items that are printed on the receipt, "category": one character}
     \(categoryGuide)
     Do not include prices, dates or card numbers.
     """

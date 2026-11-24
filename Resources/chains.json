@@ -9,7 +9,7 @@
   {"match": ["이마트", "E-MART"], "name": "E-mart超市", "category": "食"},
   {"match": ["홈플러스", "HOMEPLUS"], "name": "Homeplus超市", "category": "食"},
   {"match": ["롯데마트", "LOTTE MART"], "name": "樂天超市", "category": "食"},
-  {"match": ["롯데면세점", "LOTTE DUTY FREE", "lottedfs"], "name": "樂天免稅店", "category": "奢"},
+  {"match": ["롯데면세점", "LOTTE DUTY FREE", "lottedfs", "LOTTE DUTY", "롯데면세", "lotted"], "name": "樂天免稅店", "category": "奢"},
   {"match": ["신라면세점", "SHILLA DUTY FREE"], "name": "新羅免稅店", "category": "奢"},
   {"match": ["신세계면세점", "SHINSEGAE DUTY FREE"], "name": "新世界免稅店", "category": "奢"},
   {"match": ["경복궁면세점", "KYUNG BOK KUNG"], "name": "景福宮免稅店", "category": "奢"},
@@ -27,8 +27,9 @@
   {"match": ["무신사", "MUSINSA"], "name": "MUSINSA", "category": "衣"},
   {"match": ["아트박스", "ARTBOX"], "name": "ARTBOX", "category": "他"},
   {"match": ["교보문고"], "name": "教保文庫", "category": "他"},
-  {"match": ["SEA LIFE", "씨라이프", "부산아쿠아리움"], "name": "SEA LIFE水族館", "category": "樂"},
+  {"match": ["SEA LIFE", "씨라이프", "부산아쿠아리움", "SER LIFE", "부산아쿠아리", "멀린엔터테인먼트"], "name": "SEA LIFE水族館", "category": "樂"},
   {"match": ["스카이라인루지", "SKYLINE LUGE"], "name": "Skyline Luge天空滑車", "category": "樂"},
   {"match": ["블루라인", "BLUE LINE"], "name": "Blue Line Park", "category": "樂"},
-  {"match": ["클럽디 오아시스", "CLUB D OASIS"], "name": "Club D Oasis", "category": "樂"}
+  {"match": ["클럽디 오아시스", "CLUB D OASIS"], "name": "Club D Oasis", "category": "樂"},
+  {"match": ["미피 해운대", "미피해운대", "MIFFY"], "name": "Miffy店", "category": "他"}
 ]

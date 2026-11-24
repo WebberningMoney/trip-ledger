@@ -197,6 +197,9 @@ final class AppModel: ObservableObject {
         let before = trip.receipts.first { $0.id == receiptID }
         update(tripID: trip.id, receiptID: receiptID, change)
         guard let before = before, let after = currentTrip?.receipts.first(where: { $0.id == receiptID }) else { return }
+        if before.itemsZh != after.itemsZh {
+            update(tripID: trip.id, receiptID: receiptID) { $0.itemsFromAI = nil }
+        }
         if before.storeZh != after.storeZh || before.category != after.category {
             remember(after)
         }
@@ -256,6 +259,8 @@ final class AppModel: ObservableObject {
     func runTranslations(_ session: TranslationSession) async {
         let jobs = pendingTranslations
         guard !jobs.isEmpty else { return }
+        progressText = "翻譯店名中（\(jobs.count) 筆）…"
+        defer { if !isProcessing { progressText = "" } }
         let requests = jobs.map { TranslationSession.Request(sourceText: $0.text, clientIdentifier: $0.receiptID.uuidString) }
         do {
             let responses = try await session.translations(from: requests)

@@ -81,6 +81,9 @@ struct Receipt: Codable, Identifiable, Equatable {
     var storeZh: String? = nil         // 中文店名
     var itemsZh: String? = nil         // 品項（中文、簡短）
     var category: String? = nil        // 食衣住行樂奢他代買
+    /// 品項是 AI 寫的（還沒被使用者改過或確認）。實測 AI 寫的品項常常不準，所以要標紅字。
+    /// （用 Bool? 而不是 Bool：舊版存的帳本沒有這個欄位，讀檔時才不會失敗。）
+    var itemsFromAI: Bool? = nil
     /// 店名和類別是從哪裡來的：memory（記住的店家）、chain（常見連鎖店清單）、
     /// translation（翻譯）、ai（AI 猜的）、user（使用者改過）
     var nameSource: String? = nil
@@ -112,6 +115,7 @@ struct Receipt: Codable, Identifiable, Equatable {
         if storeZh == nil { list.append("店名") }
         if category == nil { list.append("類別") }
         if nameSource == "ai" || nameSource == "translation" { list.append("店名和類別是自動判斷的") }
+        if itemsFromAI == true { list.append("品項是 AI 寫的") }
         return list
     }
 
